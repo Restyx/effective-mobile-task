@@ -84,7 +84,7 @@ class Account:
         finally:
             file.close()
     
-    def search_operation(self, search_key: int, search_criteria: str) -> None:
+    def search_operation(self, search_key: int, search_criteria: None) -> None:
         # Принимает ключ и значение для поиска и выводит в консоль соответствующие записи
         try:
             operation_list: list = self.get_operation_list()
@@ -94,7 +94,7 @@ class Account:
                 match search_key:
                     case 1:
                         # Дата
-                        if operation.get_data() == search_criteria: response +=''.join(operation.export())
+                        if operation.get_date() == search_criteria: response +=''.join(operation.export())
                     case 2:
                         # Категория
                         if operation.get_type() == search_criteria.capitalize(): response +=''.join(operation.export())
@@ -111,8 +111,8 @@ class Account:
             return f"Unexpected: {error}"
 
 class Operation:
-    def __init__(self, type: str, value: int, description: str, date: date = date.today()) -> None:
-        self._date = date
+    def __init__(self, type: str, value: int, description: str, input_date: date = date.today()) -> None:
+        self._date: date = input_date
         self._type: str = type
         self._value: int = value
         self._description: str = description
@@ -157,11 +157,8 @@ def message_handler(message: int, account: Account, ) -> str:
         
         case 2:
             try:
-                input_date: date = date(int(input("Введите год: ")), 
-                                        int(input("Введите месяц: ")), 
-                                        int(input("Введите день: ")))
+                input_date: date = date(int(input("Введите год: ")), int(input("Введите месяц: ")), int(input("Введите день: ")))
                 input_type: str = input("Введите категорию (доход / расход): ").title()
-                print(input_type)
                 input_value: int = int(input("Введите сумму: "))
                 input_description: str = input("Введите описание: ")
                 
@@ -173,63 +170,66 @@ def message_handler(message: int, account: Account, ) -> str:
                 return f"Ошибка: {error}\n"
 
         case 3:
-            print("Выберите операцию для редактирования...")
-            print("ID")
-            
-            operation_list: list = account.get_operation_list()
-            
-            for index, operation in enumerate(operation_list):
-                print(index, operation.get_date(), operation.get_type(), operation.get_value(), operation.get_description(), sep="\t")
-            
-            selected_operation_index: int = int(input("Выбрать ID: "))
-
-            print("Выберите атрибут для редактирования...")
-            print("[1] Дата")
-            print("[2] Категория")
-            print("[3] Сумма")
-            print("[4] Описание")
-
-            attribute_dict: dict = {
-                1: "Дата",
-                2: "Категория",
-                3: "Сумма",
-                4: "Описание"
-            }
-
-            selected_attribute: int = int(input("№: "))
-            print("Введите новое значение атрибута...")
-            
-            
-            match attribute_dict[selected_attribute]:
-                case "Дата":
-                    new_value: date = date(int(input("Введите год: ")), 
-                                        int(input("Введите месяц: ")), 
-                                        int(input("Введите день: ")))
-                    
-                    operation_list[selected_operation_index].set_date(new_value)
-                    
-                case "Категория":
-                    print("[1] Доход")
-                    print("[2] Расход")
-
-                    new_value: int = int(input("Категория: "))
-                    type_dict: dict = {
-                        1: "Доход",
-                        2: "Расход"
-                    }
-                    operation_list[selected_operation_index].set_type(type_dict[new_value])
-
-                case "Сумма":
-                    new_value: int = int(input("Сумма: "))
-                    operation_list[selected_operation_index].set_value(new_value)
-
-                case "Описание":
-                    new_value: str = input("Описание: ")
-                    operation_list[selected_operation_index].set_description(new_value)
+            try:
+                print("Выберите операцию для редактирования...")
+                print("ID")
                 
-            account.update_operation(operation_list)
-            return("Операция успешно отредактирована!")
-        
+                operation_list: list = account.get_operation_list()
+                
+                for index, operation in enumerate(operation_list):
+                    print(index, operation.get_date(), operation.get_type(), operation.get_value(), operation.get_description(), sep="\t")
+                
+                selected_operation_index: int = int(input("Выбрать ID: "))
+
+                if selected_operation_index > len(operation_list)-1 or selected_operation_index < 0: raise ValueError("Выбран некоректный ID")
+
+                print("Выберите атрибут для редактирования...")
+                print("[1] Дата")
+                print("[2] Категория")
+                print("[3] Сумма")
+                print("[4] Описание")
+
+                attribute_dict: dict = {
+                    1: "Дата",
+                    2: "Категория",
+                    3: "Сумма",
+                    4: "Описание"
+                }
+
+                selected_attribute: int = int(input("№: "))
+                print("Введите новое значение атрибута...")
+                
+                if selected_attribute > 4 or selected_attribute < 0: raise ValueError("Выбран некоректный атрибут")
+                
+                match attribute_dict[selected_attribute]:
+                    case "Дата":
+                        new_value: date = date(int(input("Введите год: ")), int(input("Введите месяц: ")), int(input("Введите день: ")))
+                        
+                        operation_list[selected_operation_index].set_date(new_value)
+                        
+                    case "Категория":
+                        print("[1] Доход")
+                        print("[2] Расход")
+
+                        new_value: int = int(input("Категория: "))
+                        type_dict: dict = {
+                            1: "Доход",
+                            2: "Расход"
+                        }
+                        operation_list[selected_operation_index].set_type(type_dict[new_value])
+
+                    case "Сумма":
+                        new_value: int = int(input("Сумма: "))
+                        operation_list[selected_operation_index].set_value(new_value)
+
+                    case "Описание":
+                        new_value: str = input("Описание: ")
+                        operation_list[selected_operation_index].set_description(new_value)
+                account.update_operation(operation_list)
+                return "Операция успешно отредактирована!"
+            
+            except Exception as error:
+                return f"Ошибка: {error}\n"
         case 4:
             print("Выберите атрибут по которому будет происходить поиск...")
             print("[1] Дата")
@@ -239,14 +239,20 @@ def message_handler(message: int, account: Account, ) -> str:
 
             selected_attribute: int = int(input("№: "))
 
-            print("Введите значение атрибута поиска")
-            selected_value: str = input("Значение: ")
+            print("Введите значение атрибута поиска...")
+            if selected_attribute == 1: selected_value: date = date(int(input("Введите год: ")), int(input("Введите месяц: ")), int(input("Введите день: ")))
+            else: selected_value: str = input("Значение: ")
 
             return account.search_operation(selected_attribute, selected_value)
+        case _:
+            return "Некоректное значение! Пожалуйста введите число от 1 до 4"
 
 
 if __name__ == "__main__":
     account = Account()
+    file = open("account-history.txt", "a+")
+    file.close()
+
     while True:
         try:
             print("Выберите функцию (введите число от 1 до 4):")
@@ -261,4 +267,4 @@ if __name__ == "__main__":
             print(response, "\n\n")
         except Exception as error:
             system("cls")
-            print("Некоректное значение! Пожалуйста введите число от 1 до 4\n\n")
+            print(f"Ошибка! {error}")
